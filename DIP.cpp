@@ -2,6 +2,7 @@
 #include<cstdlib>
 #include<cmath>
 #include<windows.h>
+#include<wingdi.h>
 #include<cstring>
 #include<assert.h>
 using namespace std;
@@ -17,8 +18,11 @@ class graph {
 public:
 	graph() = delete;
 	graph(size_t _w, size_t _h) : w(_w), h(_h) { 
-		//uint8_t* t = new uint8_t[w*h];
-		//img = (uint8_t**)(t);
+		img = new uint32_t*[h];
+		for (size_t i = 0; i < h; i++) {
+			img[i] = new uint32_t[w];
+			memset(img[i], 0, sizeof(uint32_t) * w);
+		}
 	}	
 	size_t get_w() {
 		return w;
@@ -100,16 +104,26 @@ public:
 		if (fread(info, sizeof(uint8_t), 4, img)) {
 			 bp = trans16b_2_10n(info, 4);
 		}
-		uint32_t info1[2] = { 0,0 };
+		printf("log");
+		uint32_t data = 0;
 		if (bp != 0) {
 			fseek(img, bp, SEEK_SET);
 			for (size_t high = 0; high < gr->get_h(); high++) {
-				fread(info1, sizeof(uint8_t), gr->get_w()*3, img);
-				//for (size_t i = 0; i < gr->get_w(); i++) printf("%x ", gr->get_grh()[gr->get_h() - high][i]);
-				printf("%x %x\n", info1[0], info1[1]);
+				for (size_t weight = 0; weight < gr->get_w(); weight++) {
+					fread(&(gr->get_grh()[gr->get_h() - high - 1][weight]), sizeof(uint8_t), 3, img);
+				}
+				if (gr->get_h() * 3 % 4) {
+					bp = 4 - ((gr->get_h() * 3) % 4);
+					fseek(img, bp, SEEK_CUR);
+				}
+			}
+			for (size_t i = 0; i < gr->get_h(); i++) {
+				for (size_t j = 0; j < gr->get_w(); j++) {
+					printf("%x ", gr->get_grh()[gr->get_h() - i-1][j]);
+				}
+				printf("\n");
 			}
 		}
-		
 		return *this;
 	}
 	size_t get_size(void) { return bmp_size; }
@@ -127,7 +141,7 @@ private:
 
 
 int main() {
-	bmp24 b1("lty.bmp");
+	bmp24 b1("t1.bmp");
 	printf("%s \n", b1.get_path());
 	b1.load();
 	printf("%u\n", b1.get_size());
